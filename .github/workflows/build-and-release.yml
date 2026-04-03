@@ -1,0 +1,79 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: ${{ github.event.inputs.version || 'v1.0.0' }}
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore RemoveTFVCPolicy.sln
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release
+        run: msbuild RemoveTFVCPolicy.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Verify - Run with help option
+        run: .\RemoveTFVCPolicy\bin\Release\RemoveTFVCPolicy.exe --help
+
+      - name: Create release archive
+        shell: powershell
+        run: |
+          Compress-Archive -Path .\RemoveTFVCPolicy\bin\Release\* -DestinationPath RemoveTFVCPolicy-${{ env.VERSION }}.zip
+
+      - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          body: |
+            ## RemoveTFVCPolicy ${{ env.VERSION }}
+
+            A command-line utility that removes all TFVC check-in policies from an Azure DevOps project.
+
+            ### Usage
+            ```
+            RemoveTFVCPolicy.exe -collection <collectionUri> -project <projectName>
+            ```
+
+            ### Options
+            ```
+            -collection   Azure DevOps organization or collection URL
+            -project      Team project name
+            -help         Show help text
+            ```
+
+            ### Example
+            ```
+            RemoveTFVCPolicy.exe -collection https://contoso.visualstudio.com/ -project fabrikam
+            ```
+
+            ### Download
+            Download `RemoveTFVCPolicy-${{ env.VERSION }}.zip`, extract all files to a folder, and run `RemoveTFVCPolicy.exe`.
+          files: RemoveTFVCPolicy-${{ env.VERSION }}.zip
+          draft: false
+          prerelease: false
