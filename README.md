@@ -77,7 +77,7 @@ RemoveTFVCPolicy.exe -help
 
 ## Authentication
 
-The tool uses the Azure DevOps client libraries to authenticate. It will prompt for credentials if your current Windows credentials do not have access to the specified collection. You can also pre-authenticate using a Personal Access Token (PAT) or Azure Active Directory credentials.
+The tool uses the Azure DevOps client libraries to authenticate. It will prompt for credentials if your current Windows credentials do not have access to the specified collection. You can also pre-authenticate using a Personal Access Token (PAT) or Microsoft Entra ID credentials.
 
 ## References
 
